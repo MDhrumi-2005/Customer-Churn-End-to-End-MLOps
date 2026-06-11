@@ -1,19 +1,19 @@
-# Artifacts
-artifacts/
-
-# Models
-models/
-
-# MLflow
-mlruns/
-mlflow.db
+# Virtual Environment
+venv/
 
 # Python
 __pycache__/
 *.pyc
 
-# Virtual Environment
-venv/
+# MLflow
+mlruns/
+mlflow.db
+
+# Models
+models/
+
+# Artifacts
+artifacts/
 
 # DVC Cache
 .dvc/cache/
