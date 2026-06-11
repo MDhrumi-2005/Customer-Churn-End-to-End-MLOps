@@ -1,56 +1,19 @@
-# =========================
-# Virtual Environment
-# =========================
-venv/
-.venv/
+# Artifacts
+artifacts/
 
-# =========================
-# Python Cache
-# =========================
-__pycache__/
-*.py[cod]
-*$py.class
+# Models
+models/
 
-# =========================
-# Jupyter Notebooks
-# =========================
-.ipynb_checkpoints/
-
-# =========================
-# Environment Variables
-# =========================
-.env
-
-# =========================
-# IDE Files
-# =========================
-.vscode/
-.idea/
-
-# =========================
-# Operating System Files
-# =========================
-.DS_Store
-Thumbs.db
-
-# =========================
-# Logs
-# =========================
-logs/
-*.log
-
-# =========================
 # MLflow
-# =========================
 mlruns/
+mlflow.db
 
-# =========================
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+
 # DVC Cache
-# =========================
 .dvc/cache/
-
-# =========================
-# Temporary Files
-# =========================
-temp/
-tmp/
