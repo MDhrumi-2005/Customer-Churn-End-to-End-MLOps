@@ -1,0 +1,13 @@
+DATA CLEANING REPORT
+==================================================
+
+Input File: data/validated/validated_churn.csv
+Output File: data/processed/cleaned_churn.csv
+
+Original Rows: 7043
+Final Rows: 7043
+
+Rows Removed Due To Duplicates: 0
+
+Missing Values Before Cleaning: 11
+Missing Values After Cleaning: 0
