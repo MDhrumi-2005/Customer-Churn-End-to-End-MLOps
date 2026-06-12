@@ -1,4 +1,15 @@
+# DVC Pipeline Configuration
+# Run entire pipeline: dvc repro
+# Run from specific stage: dvc repro <stage_name>
+# Visualize pipeline: dvc dag
+# Check status: dvc status
+
 stages:
+
+  ingestion:
+    cmd: python src/components/ingestion.py
+    outs:
+      - data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
 
   validation:
     cmd: python src/components/validation.py
@@ -7,6 +18,7 @@ stages:
       - src/components/validation.py
     outs:
       - data/validated/validated_churn.csv
+    desc: "Validate raw data schema and integrity"
 
   cleaning:
     cmd: python src/components/cleaning.py
@@ -15,6 +27,7 @@ stages:
       - src/components/cleaning.py
     outs:
       - data/processed/cleaned_churn.csv
+    desc: "Clean data: handle missing values, duplicates, type conversion"
 
   feature_engineering:
     cmd: python src/components/feature_engineering.py
@@ -23,6 +36,7 @@ stages:
       - src/components/feature_engineering.py
     outs:
       - artifacts/feature_engineering
+    desc: "Encode categoricals, scale numerics, train/test split"
 
   model_training:
     cmd: python src/components/model_training.py
@@ -30,17 +44,31 @@ stages:
       - artifacts/feature_engineering
       - src/components/model_training.py
       - config/params.yaml
+    params:
+      - random_forest
+      - xgboost
+      - lightgbm
+      - cv_folds
+      - selection_metric
     outs:
       - models/model_scores.csv
       - models/RandomForest.pkl
       - models/XGBoost.pkl
       - models/LightGBM.pkl
+    desc: "Train 3 models with GridSearchCV, log to MLflow"
 
   model_selection:
     cmd: python src/components/model_selection.py
     deps:
       - models/model_scores.csv
+      - models/RandomForest.pkl
+      - models/XGBoost.pkl
+      - models/LightGBM.pkl
       - src/components/model_selection.py
     outs:
       - models/best_model.pkl
       - models/best_model_metadata.json
+    desc: "Select best model by ROC-AUC, register to MLflow"
+    
+metrics:
+  - models/best_model_metadata.json

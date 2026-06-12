@@ -167,6 +167,7 @@ class ModelTrainer:
         # MLflow Experiment
         # ---------------------------------------
 
+        mlflow.set_tracking_uri("sqlite:///mlflow.db")
         mlflow.set_experiment(
             "Customer_Churn"
         )
