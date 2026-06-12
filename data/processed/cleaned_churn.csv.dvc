@@ -1,5 +1,0 @@
-outs:
-- md5: ee65c42d41230b771ae7af2f801f875d
-  size: 979010
-  hash: md5
-  path: cleaned_churn.csv

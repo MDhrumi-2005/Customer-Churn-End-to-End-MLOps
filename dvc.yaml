@@ -1,0 +1,46 @@
+stages:
+
+  validation:
+    cmd: python src/components/validation.py
+    deps:
+      - data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+      - src/components/validation.py
+    outs:
+      - data/validated/validated_churn.csv
+
+  cleaning:
+    cmd: python src/components/cleaning.py
+    deps:
+      - data/validated/validated_churn.csv
+      - src/components/cleaning.py
+    outs:
+      - data/processed/cleaned_churn.csv
+
+  feature_engineering:
+    cmd: python src/components/feature_engineering.py
+    deps:
+      - data/processed/cleaned_churn.csv
+      - src/components/feature_engineering.py
+    outs:
+      - artifacts/feature_engineering
+
+  model_training:
+    cmd: python src/components/model_training.py
+    deps:
+      - artifacts/feature_engineering
+      - src/components/model_training.py
+      - config/params.yaml
+    outs:
+      - models/model_scores.csv
+      - models/RandomForest.pkl
+      - models/XGBoost.pkl
+      - models/LightGBM.pkl
+
+  model_selection:
+    cmd: python src/components/model_selection.py
+    deps:
+      - models/model_scores.csv
+      - src/components/model_selection.py
+    outs:
+      - models/best_model.pkl
+      - models/best_model_metadata.json

@@ -1,19 +1,14 @@
-# Virtual Environment
 venv/
 
-# Python
-__pycache__/
-*.pyc
-
-# MLflow
+artifacts/
+models/
 mlruns/
 mlflow.db
 
-# Models
-models/
+*.pkl
+*.joblib
 
-# Artifacts
-artifacts/
-
-# DVC Cache
 .dvc/cache/
+
+data/validated/*.csv
+data/processed/*.csv
