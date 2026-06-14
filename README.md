@@ -1,127 +1,105 @@
 # Customer Churn End-to-End MLOps Pipeline
 
-## 🎯 Overview
-
-Complete MLOps pipeline for **Customer Churn Prediction** with automated orchestration, experiment tracking, and model registry.
-
-**Tech Stack:** DVC · MLflow · Scikit-Learn · XGBoost · LightGBM · Docker
+[![MLOps Pipeline CI](https://github.com/MDhrumi-2005/Customer-Churn-End-to-End-MLOps/actions/workflows/pipeline.yml/badge.svg)](https://github.com/MDhrumi-2005/Customer-Churn-End-to-End-MLOps/actions/workflows/pipeline.yml)
+[![Docker Build and Push](https://github.com/MDhrumi-2005/Customer-Churn-End-to-End-MLOps/actions/workflows/docker.yml/badge.svg)](https://github.com/MDhrumi-2005/Customer-Churn-End-to-End-MLOps/actions/workflows/docker.yml)
+[![Docker Hub](https://img.shields.io/docker/pulls/dhrumi2910/mlops-churn-pipeline)](https://hub.docker.com/r/dhrumi2910/mlops-churn-pipeline)
 
 ---
 
-## 🚀 Quick Start
+## Overview
 
-### Option 1: Run Complete Pipeline (Recommended)
+A complete **end-to-end MLOps pipeline** for predicting customer churn in a telecom company.
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+The system automates the entire ML workflow — from raw data ingestion to a deployed REST API — using industry-standard MLOps tools.
 
-# Run full pipeline
-python main.py
-```
-
-### Option 2: DVC Pipeline (Automatic Dependency Management)
-
-```bash
-# Run entire pipeline (only executes changed stages)
-dvc repro
-
-# Check pipeline status
-dvc status
-
-# Visualize pipeline DAG
-dvc dag
-```
-
-### Option 3: Docker
-
-```bash
-# Build image
-docker build -t churn-pipeline .
-
-# Run pipeline
-docker run churn-pipeline
-```
+**Tech Stack:** Python · Scikit-Learn · XGBoost · LightGBM · DVC · MLflow · FastAPI · Docker · GitHub Actions
 
 ---
 
-## 📊 Pipeline Architecture
+## Problem Statement
+
+Customer churn is a major challenge for subscription-based businesses. This project predicts whether a customer is likely to leave so the business can take proactive retention steps.
+
+**Dataset:** Telco Customer Churn (7,043 customers, 21 features)  
+**Target:** `Churn` — Yes or No  
+**Source:** [Kaggle - Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+
+---
+
+## Architecture
 
 ```
 Raw Data (CSV)
-    ↓
-[1] Data Ingestion      ← Downloads from Kaggle
-    ↓
-[2] Data Validation     ← Schema checks, missing values
-    ↓
-[3] Data Cleaning       ← Handle nulls, duplicates, types
-    ↓
-[4] Feature Engineering ← Encode, scale, train/test split
-    ↓
-[5] Model Training      ← GridSearchCV on 3 models
-    ↓                     (RandomForest, XGBoost, LightGBM)
-[6] Model Selection     ← Pick best by ROC-AUC
-    ↓
-MLflow Model Registry   ← Register with 'production-candidate' alias
+     │
+     ▼
+[1] Data Ingestion        ← Downloads dataset from Kaggle
+     │
+     ▼
+[2] Data Validation       ← Schema checks, column validation
+     │
+     ▼
+[3] Data Cleaning         ← Missing values, duplicates, type fixes
+     │
+     ▼
+[4] Feature Engineering   ← OneHotEncoder + StandardScaler + Train/Test split
+     │
+     ▼
+[5] Model Training        ← GridSearchCV on RandomForest, XGBoost, LightGBM
+     │
+     ▼
+[6] Model Selection       ← Best model by ROC-AUC → MLflow Model Registry
+     │
+     ▼
+FastAPI REST API          ← Serve predictions via POST /predict
+     │
+     ▼
+Docker Container          ← Portable deployment
+     │
+     ▼
+GitHub Actions CI/CD      ← Auto build + push to Docker Hub on every push
 ```
 
 ---
 
-## 🔄 Automatic DVC Orchestration
-
-**DVC automatically reruns only affected stages when:**
-
-- **Data changes**: Modify raw CSV → reruns from ingestion
-- **Code changes**: Edit any component → reruns from that stage
-- **Config changes**: Update `params.yaml` → reruns training
-- **Dependencies change**: Automatic detection via `deps` tracking
-
-### Examples
-
-```bash
-# 1. Change hyperparameters → only reruns training & selection
-vim config/params.yaml
-dvc repro
-
-# 2. Update cleaning logic → reruns cleaning, engineering, training, selection
-vim src/components/cleaning.py
-dvc repro
-
-# 3. Replace raw data → reruns entire pipeline
-cp new_data.csv data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
-dvc repro
-
-# 4. Check what would run (dry-run)
-dvc status
-```
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 Customer-Churn-End-to-End-MLOps/
+│
+├── .github/
+│   └── workflows/
+│       ├── pipeline.yml          ← CI: runs ML pipeline on every push
+│       └── docker.yml            ← CD: builds & pushes Docker image
+│
 ├── config/
-│   └── params.yaml              # Hyperparameters (tracked by DVC)
+│   └── params.yaml               ← Hyperparameters for all models
 │
 ├── data/
-│   ├── raw/                     # Original dataset
-│   ├── validated/               # Schema-validated data
-│   └── processed/               # Cleaned data
+│   ├── raw/                      ← Original dataset
+│   ├── validated/                ← Schema-validated data
+│   └── processed/                ← Cleaned data
 │
 ├── artifacts/
-│   └── feature_engineering/     # Preprocessor, train/test splits
+│   └── feature_engineering/
+│       ├── preprocessor.pkl      ← Fitted sklearn pipeline
+│       ├── X_train.csv
+│       ├── X_test.csv
+│       ├── y_train.csv
+│       └── y_test.csv
 │
-├── models/                      # Trained models & leaderboard
+├── models/
 │   ├── RandomForest.pkl
 │   ├── XGBoost.pkl
 │   ├── LightGBM.pkl
-│   ├── model_scores.csv         # Leaderboard
-│   ├── best_model.pkl           # Production model
-│   └── best_model_metadata.json # Metrics
+│   ├── model_scores.csv          ← Leaderboard
+│   ├── best_model.pkl            ← Production model
+│   └── best_model_metadata.json  ← Metrics
+│
+├── reports/
+│   └── metrics.json              ← Final model metrics
 │
 ├── src/
-│   ├── components/              # Pipeline stages
+│   ├── components/
 │   │   ├── ingestion.py
 │   │   ├── validation.py
 │   │   ├── cleaning.py
@@ -131,46 +109,254 @@ Customer-Churn-End-to-End-MLOps/
 │   └── utils/
 │       └── config_loader.py
 │
-├── mlruns/                      # MLflow tracking data
-├── mlflow.db                    # MLflow metadata
-│
-├── dvc.yaml                     # DVC pipeline definition
-├── main.py                      # Full pipeline runner
-├── requirements.txt             # Python dependencies
-└── Dockerfile                   # Container setup
+├── app_api.py                    ← FastAPI inference service
+├── main.py                       ← Full pipeline runner
+├── dvc.yaml                      ← DVC pipeline definition
+├── Dockerfile                    ← Container build
+├── requirements.txt              ← Python dependencies
+└── README.md
 ```
 
 ---
 
-## 🔬 DVC Pipeline Stages
+## Quick Start
 
-| Stage | Command | Depends On | Outputs |
-|-------|---------|------------|---------|
-| `ingestion` | `python src/components/ingestion.py` | - | `data/raw/*.csv` |
-| `validation` | `python src/components/validation.py` | ingestion | `data/validated/*.csv` |
-| `cleaning` | `python src/components/cleaning.py` | validation | `data/processed/*.csv` |
-| `feature_engineering` | `python src/components/feature_engineering.py` | cleaning | `artifacts/feature_engineering/` |
-| `model_training` | `python src/components/model_training.py` | feature_engineering, `params.yaml` | `models/*.pkl`, `model_scores.csv` |
-| `model_selection` | `python src/components/model_selection.py` | model_training | `best_model.pkl`, `metadata.json` |
-
-### Run Individual Stages
+### Option 1 — Run Locally
 
 ```bash
-# Run up to a specific stage
-dvc repro feature_engineering
+# Clone repo
+git clone https://github.com/MDhrumi-2005/Customer-Churn-End-to-End-MLOps.git
+cd Customer-Churn-End-to-End-MLOps
 
-# Run only one stage (skip dependencies)
-dvc run -n model_training python src/components/model_training.py
+# Create virtual environment
+python -m venv venv_mlops
+venv_mlops\Scripts\activate        # Windows
+# source venv_mlops/bin/activate   # Linux/Mac
 
-# Force rerun all stages
-dvc repro --force
+# Install dependencies
+pip install -r requirements.txt
+
+# Run full pipeline
+python main.py
+```
+
+### Option 2 — Docker (No setup needed)
+
+```bash
+# Pull from Docker Hub
+docker pull dhrumi2910/mlops-churn-pipeline:latest
+
+# Run the API
+docker run -p 8000:8000 dhrumi2910/mlops-churn-pipeline:latest
+```
+
+Open: **http://localhost:8000/docs**
+
+### Option 3 — DVC (Smart pipeline)
+
+```bash
+# Runs only changed stages automatically
+dvc repro
 ```
 
 ---
 
-## 🧪 Model Training
+## Pipeline Stages
 
-### Hyperparameter Tuning (config/params.yaml)
+### 1. Data Ingestion
+Downloads the Telco Customer Churn dataset from Kaggle. Skips download if file already exists locally.
+
+### 2. Data Validation
+Checks all 21 required columns are present, dataset is not empty, and reports missing values and duplicates.
+
+### 3. Data Cleaning
+- Converts `TotalCharges` from string to numeric
+- Fills missing values (median for numeric, mode for categorical)
+- Removes duplicate rows
+- Saves a cleaning report
+
+### 4. Feature Engineering
+- Drops `customerID`
+- Encodes target: `Churn` → 0/1
+- `OneHotEncoder` for 15 categorical columns
+- `StandardScaler` for 4 numerical columns
+- 80/20 stratified train/test split
+- Saves `preprocessor.pkl` and split CSVs
+
+### 5. Model Training
+Trains 3 models with `GridSearchCV` (5-fold CV, ROC-AUC scoring):
+- **RandomForest**: n_estimators, max_depth
+- **XGBoost**: n_estimators, max_depth, learning_rate
+- **LightGBM**: n_estimators, max_depth, learning_rate
+
+All runs logged to **MLflow** (params, metrics, artifacts).
+
+### 6. Model Selection
+- Reads leaderboard CSV
+- Selects best model by ROC-AUC
+- Saves `best_model.pkl` and `best_model_metadata.json`
+- Registers to **MLflow Model Registry** with alias `production-candidate`
+
+---
+
+## Model Performance
+
+| Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
+|-------|----------|-----------|--------|----------|---------|
+| **LightGBM** | 80.41% | 70.59% | 44.92% | 54.90% | **0.8445** |
+| XGBoost | 80.27% | 70.00% | 44.92% | 54.72% | 0.8445 |
+| RandomForest | 79.63% | 68.51% | 43.05% | 52.87% | 0.8408 |
+
+**Best Model: LightGBM** (ROC-AUC: 0.8445)
+
+---
+
+## FastAPI Inference Service
+
+### Start locally
+
+```bash
+uvicorn app_api:app --reload --port 8000
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Health check |
+| POST | `/predict` | Predict churn |
+
+### Sample Request
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gender": "Female",
+    "SeniorCitizen": 0,
+    "Partner": "Yes",
+    "Dependents": "No",
+    "tenure": 2,
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "Fiber optic",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "Yes",
+    "StreamingMovies": "Yes",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 85.5,
+    "TotalCharges": 171.0
+  }'
+```
+
+### Sample Response
+
+```json
+{
+  "prediction": 1,
+  "probability_churn": 0.82,
+  "label": "Will Churn",
+  "model_used": "LightGBM"
+}
+```
+
+### Swagger UI
+
+Open **http://localhost:8000/docs** for the interactive API documentation.
+
+---
+
+## DVC Pipeline
+
+```yaml
+# dvc.yaml — 6 automated stages
+ingestion → validation → cleaning → feature_engineering → model_training → model_selection
+```
+
+### DVC Commands
+
+```bash
+dvc repro              # Run only changed stages
+dvc repro --force      # Force rerun all stages
+dvc status             # Check what would run
+dvc dag                # Visualize pipeline graph
+dvc params diff        # Compare parameter changes
+dvc metrics show       # Show tracked metrics
+```
+
+### Auto-rerun behaviour
+
+| Change | Stages that rerun |
+|--------|------------------|
+| Raw data changed | All 6 stages |
+| `params.yaml` changed | model_training + model_selection |
+| `cleaning.py` changed | cleaning → selection (4 stages) |
+| Nothing changed | 0 stages ("Pipeline up to date") |
+
+---
+
+## MLflow
+
+```bash
+# Launch UI
+mlflow ui
+# Open: http://127.0.0.1:5000
+```
+
+Features:
+- All training runs logged with params and metrics
+- Model comparison across RandomForest, XGBoost, LightGBM
+- Best model registered in Model Registry
+- Alias: `production-candidate`
+
+---
+
+## Docker
+
+### Docker Hub
+
+```
+dhrumi2910/mlops-churn-pipeline:latest
+```
+
+### Build locally
+
+```bash
+docker build -t mlops-churn-pipeline .
+docker run -p 8000:8000 mlops-churn-pipeline
+```
+
+### Pull and run from Docker Hub
+
+```bash
+docker pull dhrumi2910/mlops-churn-pipeline:latest
+docker run -p 8000:8000 dhrumi2910/mlops-churn-pipeline:latest
+```
+
+---
+
+## GitHub Actions CI/CD
+
+### MLOps Pipeline CI (`pipeline.yml`)
+Triggers on every push to `main`:
+- Installs dependencies
+- Runs `python main.py` (full 6-stage pipeline)
+- Uploads model scores and metadata as artifacts
+
+### Docker Build and Push (`docker.yml`)
+Triggers on every push to `main`:
+- Logs in to Docker Hub
+- Builds Docker image
+- Pushes `dhrumi2910/mlops-churn-pipeline:latest` to Docker Hub
+
+---
+
+## Hyperparameters (`config/params.yaml`)
 
 ```yaml
 random_forest:
@@ -191,201 +377,43 @@ cv_folds: 5
 selection_metric: roc_auc
 ```
 
-**Tracked by DVC** → Changing these reruns training automatically!
-
-### Evaluation Metrics
-
-- Accuracy
-- Precision
-- Recall
-- F1-Score
-- **ROC-AUC** (selection criterion)
+Change any value → run `dvc repro` → pipeline reruns automatically from training stage.
 
 ---
 
-## 📈 MLflow Integration
+## Technologies Used
 
-### Launch UI
-
-```bash
-mlflow ui
-# Open: http://127.0.0.1:5000
-```
-
-### Features
-
-- **Experiment Tracking**: All runs logged with params & metrics
-- **Model Registry**: Best model auto-registered
-- **Model Versioning**: Automatic version management
-- **Aliases**: `production-candidate` tag on best model
-
-### Model Registry
-
-```bash
-# View registered models
-mlflow models list
-
-# Serve model for predictions
-mlflow models serve -m "models:/CustomerChurnModel/production-candidate" --port 5001
-```
+| Category | Tools |
+|----------|-------|
+| Language | Python 3.11 |
+| ML | Scikit-Learn, XGBoost, LightGBM |
+| Data | Pandas, NumPy, SciPy |
+| MLOps | DVC, MLflow |
+| API | FastAPI, Uvicorn, Pydantic |
+| Container | Docker, Docker Hub |
+| CI/CD | GitHub Actions |
+| Config | YAML |
+| Version Control | Git, GitHub |
 
 ---
 
-## 🛠️ Development
+## Future Enhancements
 
-### Run Individual Components
-
-```bash
-python src/components/ingestion.py
-python src/components/validation.py
-python src/components/cleaning.py
-python src/components/feature_engineering.py
-python src/components/model_training.py
-python src/components/model_selection.py
-```
-
-### Check Pipeline Dependencies
-
-```bash
-# Visualize DAG
-dvc dag
-
-# Show stage info
-dvc dag --md > pipeline.md
-
-# Check what needs to run
-dvc status
-```
-
-### DVC Commands Cheatsheet
-
-```bash
-# Pipeline execution
-dvc repro                 # Run pipeline (smart execution)
-dvc repro --force         # Force rerun all stages
-dvc repro <stage>         # Run up to specific stage
-
-# Pipeline inspection
-dvc status                # Check modified stages
-dvc dag                   # Show pipeline graph
-dvc stage list            # List all stages
-
-# Data versioning
-dvc add data/raw/*.csv    # Track data file
-dvc push                  # Push data to remote storage
-dvc pull                  # Pull data from remote storage
-
-# Metrics & params
-dvc params diff           # Compare param changes
-dvc metrics show          # Show tracked metrics
-dvc plots show            # Visualize metrics
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Build & Run
-
-```bash
-# Build
-docker build -t churn-mlops .
-
-# Run pipeline
-docker run churn-mlops
-
-# Run with volume (preserve outputs)
-docker run -v $(pwd)/models:/app/models churn-mlops
-
-# Interactive mode
-docker run -it churn-mlops bash
-```
-
----
-
-## 📊 Model Performance
-
-| Model | Accuracy | ROC-AUC | Status |
-|-------|----------|---------|--------|
-| **LightGBM** | 80.41% | 0.8445 | ✅ Best |
-| XGBoost | 80.27% | 0.8445 | - |
-| RandomForest | 79.63% | 0.8408 | - |
-
-*Best model automatically selected and registered to MLflow*
-
----
-
-## 🔄 When DVC Reruns Stages
-
-### Scenario 1: Data Update
-```bash
-# Replace raw data
-cp new_churn_data.csv data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
-
-# DVC detects change → reruns ALL stages
-dvc repro
-```
-
-### Scenario 2: Hyperparameter Change
-```bash
-# Edit config/params.yaml
-vim config/params.yaml  # Change n_estimators
-
-# DVC reruns: model_training + model_selection
-dvc repro
-```
-
-### Scenario 3: Code Update
-```bash
-# Modify cleaning logic
-vim src/components/cleaning.py
-
-# DVC reruns: cleaning → feature_engineering → training → selection
-dvc repro
-```
-
-### Scenario 4: No Changes
-```bash
-dvc repro
-# Output: "Stage 'xxx' didn't change, skipping"
-# Pipeline already up-to-date
-```
-
----
-
-## 🚀 Future Enhancements
-
-- [ ] FastAPI prediction service
-- [ ] CI/CD with GitHub Actions
-- [ ] Model monitoring dashboard
-- [ ] Automated retraining triggers
-- [ ] Cloud deployment (AWS/GCP/Azure)
-- [ ] A/B testing framework
+- [ ] Cloud deployment (AWS / GCP / Azure)
+- [ ] Kubernetes for API scaling
+- [ ] Model monitoring and drift detection
+- [ ] Automated retraining on data drift
+- [ ] Cross-validation and advanced hyperparameter tuning
 - [ ] Feature store integration
+- [ ] A/B testing framework
 
 ---
 
-## 📝 Requirements
+## Author
 
-- Python 3.11+
-- See `requirements.txt` for packages
+**Dhrumi Deepak Modi**
 
-### Install
+End-to-End MLOps Customer Churn Pipeline — built to demonstrate production-grade Machine Learning Operations practices.
 
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 🤝 Contributing
-
-This is a learning project demonstrating production MLOps practices.
-
----
-
-## 📧 Author
-
-**Dhrumi**
-
-Built to demonstrate end-to-end MLOps workflows with DVC orchestration and MLflow tracking.
+GitHub: [MDhrumi-2005](https://github.com/MDhrumi-2005)  
+Docker Hub: [dhrumi2910](https://hub.docker.com/r/dhrumi2910/mlops-churn-pipeline)
