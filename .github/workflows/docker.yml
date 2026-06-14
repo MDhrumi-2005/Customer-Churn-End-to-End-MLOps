@@ -4,8 +4,8 @@ on:
   push:
     branches: [ "main" ]
     tags:
-      - "v*"            # triggers on tags like v1.0, v2.1
-  workflow_dispatch:    # manual trigger from GitHub UI
+      - "v*"
+  workflow_dispatch:
 
 jobs:
   docker:
@@ -13,61 +13,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Log in to Docker Hub
-      #    Add secrets in GitHub repo Settings → Secrets → Actions:
-      #      DOCKER_USERNAME  →  your Docker Hub username
-      #      DOCKER_PASSWORD  →  your Docker Hub access token
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 3. Set up Docker Buildx (needed for multi-platform + cache)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 4. Extract metadata (tags, labels)
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/mlops-churn-pipeline
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=ref,event=tag
-            type=sha,prefix=sha-
-
-      # 5. Build and push Docker image
-      #    Uses two-stage Dockerfile:
-      #      Stage 1 (trainer): runs full ML pipeline
-      #      Stage 2 (api):     copies artifacts + starts FastAPI
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          target: api        # build only up to the final api stage
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mlops-churn-pipeline:latest
+            ${{ secrets.DOCKER_USERNAME }}/mlops-churn-pipeline:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # 6. Print pull instructions
       - name: Print pull instructions
         run: |
-          echo "=============================================="
-          echo "  Docker image pushed successfully!"
-          echo "=============================================="
-          echo ""
-          echo "  Pull and run locally:"
-          echo ""
+          echo "Image pushed successfully!"
+          echo "Pull and run:"
           echo "  docker pull ${{ secrets.DOCKER_USERNAME }}/mlops-churn-pipeline:latest"
           echo "  docker run -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/mlops-churn-pipeline:latest"
-          echo ""
-          echo "  Then open:  http://localhost:8000/docs"
-          echo "=============================================="
+          echo "  Open: http://localhost:8000/docs"
