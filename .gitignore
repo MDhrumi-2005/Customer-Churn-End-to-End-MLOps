@@ -34,3 +34,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Reports (keep metrics.json, ignore large report files)
+reports/*.txt

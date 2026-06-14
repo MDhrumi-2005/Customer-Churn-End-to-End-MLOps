@@ -18,5 +18,9 @@ RUN mkdir -p data/raw data/validated data/processed \
 ENV PYTHONUNBUFFERED=1
 ENV MLFLOW_TRACKING_URI=sqlite:///mlflow.db
 
-# Run complete pipeline
-CMD ["python", "main.py"]
+# Expose API port
+EXPOSE 8000
+
+# Default: run full pipeline then start API
+# Override with: docker run ... python main.py  (pipeline only)
+CMD ["sh", "-c", "python main.py && uvicorn app_api:app --host 0.0.0.0 --port 8000"]

@@ -72,3 +72,4 @@ stages:
     
 metrics:
   - models/best_model_metadata.json
+  - reports/metrics.json
