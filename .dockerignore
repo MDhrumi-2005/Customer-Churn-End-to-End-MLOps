@@ -1,56 +1,45 @@
-# Git
-.git
-.gitignore
-
-# Python
-__pycache__
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
 # Virtual environments
 venv/
+venv_mlops/
 ENV/
-env/
-.venv
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# DVC cache (large, not needed in container)
+.dvc/cache/
+.dvc/tmp/
+
+# MLflow runs (regenerated inside container)
+mlruns/
+mlflow.db
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# DVC
-.dvc/tmp/
-.dvc/cache/
-
-# MLflow (keep structure but not heavy runs)
-mlruns/*/artifacts/*
-
-# Large data files (download fresh in container if needed)
-# data/raw/*.csv
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Docs (not needed in container)
+*.md
+QUICKSTART.md
+PROJECT_STATUS.md
+SETUP_AND_RUN.md
+DVC_AUTOMATION_GUIDE.md
+
+# Test files
+test_dvc_automation.py
+
+# Shell scripts
+*.sh
+*.bat
