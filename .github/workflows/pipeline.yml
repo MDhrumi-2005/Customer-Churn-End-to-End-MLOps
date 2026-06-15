@@ -1,29 +1,45 @@
 name: MLOps Pipeline CI
 
+# ─────────────────────────────────────────────────────────────
+# TRIGGERS
+# ─────────────────────────────────────────────────────────────
+# 1. Push to main (code or data change)
+# 2. Manual trigger from GitHub UI (Actions tab → Run workflow)
+# 3. When raw data file changes specifically
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:   # allows manual trigger from GitHub UI
+    paths:
+      - "data/raw/**"          # triggers when raw data changes
+      - "src/components/**"    # triggers when any pipeline code changes
+      - "config/params.yaml"   # triggers when hyperparameters change
+      - "main.py"
+  workflow_dispatch:            # manual trigger
 
 jobs:
-  run-pipeline:
-    name: Run DVC Pipeline
+  run-and-commit:
+    name: Run Pipeline and Commit New Model
     runs-on: ubuntu-latest
 
+    # Give workflow permission to push back to the repo
+    permissions:
+      contents: write
+
     steps:
-      # 1. Checkout code
+      # ── 1. Checkout full repo ───────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0          # full history needed for git push
 
-      # 2. Set up Python
+      # ── 2. Set up Python ───────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. Cache pip packages for faster runs
+      # ── 3. Cache pip for speed ─────────────────────────────
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
@@ -32,36 +48,69 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # 4. Install dependencies
+      # ── 4. Install dependencies ────────────────────────────
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5. Run complete pipeline (data already in repo)
+      # ── 5. Run complete 6-stage pipeline ───────────────────
+      #    ingestion → validation → cleaning →
+      #    feature_engineering → model_training → model_selection
       - name: Run MLOps pipeline
         run: python main.py
         env:
           MLFLOW_TRACKING_URI: sqlite:///mlflow.db
 
-      # 6. Show model metrics
-      - name: Show model metrics
+      # ── 6. Print model leaderboard ─────────────────────────
+      - name: Show model leaderboard
         run: |
           echo "================================================"
           echo "  MODEL LEADERBOARD"
           echo "================================================"
           cat models/model_scores.csv
           echo ""
-          echo "================================================"
-          echo "  BEST MODEL METADATA"
-          echo "================================================"
+          echo "  BEST MODEL"
           cat models/best_model_metadata.json
 
-      # 7. Upload reports and models as artifacts
+      # ── 7. Commit new model artifacts back to repo ─────────
+      #    This is the key step that fills the gap:
+      #    New best_model.pkl → committed → triggers Docker build
+      - name: Commit updated model artifacts
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage all generated artifacts
+          git add models/best_model.pkl
+          git add models/best_model_metadata.json
+          git add models/model_scores.csv
+          git add models/RandomForest.pkl
+          git add models/XGBoost.pkl
+          git add models/LightGBM.pkl
+          git add artifacts/feature_engineering/preprocessor.pkl
+          git add artifacts/feature_engineering/X_train.csv
+          git add artifacts/feature_engineering/X_test.csv
+          git add artifacts/feature_engineering/y_train.csv
+          git add artifacts/feature_engineering/y_test.csv
+          git add reports/metrics.json
+
+          # Only commit if something actually changed
+          if git diff --staged --quiet; then
+            echo "No model changes detected — skipping commit"
+          else
+            BEST=$(python -c "import json; d=json.load(open('models/best_model_metadata.json')); print(d['best_model'])")
+            AUC=$(python -c "import json; d=json.load(open('models/best_model_metadata.json')); print(round(d['roc_auc'],4))")
+            git commit -m "ci: retrain pipeline — best model: ${BEST} (ROC-AUC: ${AUC}) [skip ci]"
+            git push
+            echo "New model committed and pushed"
+          fi
+
+      # ── 8. Upload artifacts to GitHub ──────────────────────
       - name: Upload pipeline artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pipeline-outputs
+          name: pipeline-outputs-${{ github.run_number }}
           path: |
             models/model_scores.csv
             models/best_model_metadata.json
